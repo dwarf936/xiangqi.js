@@ -185,12 +185,12 @@ const Xiangqi = function (fen) {
     }
 
     /* 2nd criterion: move number field is a integer value > 0? */
-    if (isNaN(tokens[5]) || parseInt(tokens[5], 10) <= 0) {
+    if (tokens[5] === '' || isNaN(tokens[5]) || parseInt(tokens[5], 10) <= 0) {
       return result(2);
     }
 
     /* 3rd criterion: half move counter is an integer >= 0? */
-    if (isNaN(tokens[4]) || parseInt(tokens[4], 10) < 0) {
+    if (tokens[4] === '' || isNaN(tokens[4]) || parseInt(tokens[4], 10) < 0) {
       return result(3);
     }
 
