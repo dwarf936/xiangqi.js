@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试FEN字符串</title>
+</head>
+<body>
+    <h1>测试FEN字符串验证</h1>
+    <div id="results"></div>
+    <script src="xiangqi.js"></script>
+    <script>
+        // 残局列表
+        const ENDGAMES = {
+            '1': '3k5/9/3R5/9/9/9/9/9/9/4K4 r - - 0 1',
+            '2': '3k5/9/3R1R2/9/9/9/9/9/9/4K4 r - - 0 1',
+            '3': '3k5/9/3R4/9/9/3N4/9/9/9/4K4 r - - 0 1',
+            '4': '3k5/9/3R5/9/9/3C4/9/9/9/4K4 r - - 0 1'
+        };
+
+        const resultsDiv = document.getElementById('results');
+
+        // 测试每个残局的FEN字符串
+        for (let id in ENDGAMES) {
+            const fen = ENDGAMES[id];
+            const game = new Xiangqi(fen);
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.innerHTML = `
+                <h3>残局 ${id}</h3>
+                <p>FEN: ${fen}</p>
+                <p>游戏结束: ${game.game_over()}</p>
+                <p>将军: ${game.in_check()}</p>
+                <p>将死: ${game.in_checkmate()}</p>
+                <p>可用走法: ${game.moves().length}</p>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+    </script>
+</body>
+</html>
