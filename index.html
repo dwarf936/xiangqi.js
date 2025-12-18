@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国象棋 - 人机对战残局</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .game-controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-controls button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .endgame-selector {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .endgame-selector h3 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .endgame-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .endgame-list button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .endgame-list button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .game-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .board-container {
+            flex: 1;
+            min-width: 450px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #chessboard {
+            border-collapse: collapse;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        #chessboard td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #333;
+            font-size: 36px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #f0d9b5;
+        }
+
+        #chessboard td.light {
+            background-color: #f0d9b5;
+        }
+
+        #chessboard td.dark {
+            background-color: #b58863;
+        }
+
+        #chessboard td.selected {
+            background-color: #ffff99 !important;
+            box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.8);
+        }
+
+        #chessboard td.valid-move {
+            background-color: #99ff99 !important;
+        }
+
+        #chessboard td:hover {
+            background-color: #e8d5c4;
+        }
+
+        .controls {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-panel h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .status h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .status p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .highlight {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        @media (max-width: 968px) {
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .board-container {
+                min-width: 350px;
+            }
+
+            #chessboard td {
+                width: 40px;
+                height: 40px;
+                font-size: 28px;
+            }
+
+            .controls {
+                width: 100%;
+                max-width: 450px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>中国象棋 - 人机对战残局</h1>
+        <div class="subtitle">挑战不同残局，提升你的象棋水平</div>
+
+        <div class="game-controls">
+            <button onclick="initGame()">新游戏（默认开局）</button>
+            <button onclick="showEndgameSelector()">选择残局</button>
+        </div>
+
+        <div id="endgameSelector" class="endgame-selector" style="display: none;">
+            <h3>选择残局</h3>
+            <div class="endgame-list">
+                <button onclick="loadEndgame('4k4/4a4/9/9/9/9/9/9/4P4/4R1K1 r - - 0 1')">单车胜士</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/9/9/9/4P4/4K4 r - - 0 1')">单兵胜将</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/9/4p4/9/9/4K4 r - - 0 1')">单将和兵</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/4R4/9/9/9/4K4 r - - 0 1')">单车胜将</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/4n4/9/9/9/4K4 r - - 0 1')">单马和将</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/4b4/9/9/9/4K4 r - - 0 1')">单象和将</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/4a4/9/9/9/4K4 r - - 0 1')">单士和将</button>
+                <button onclick="loadEndgame('4k4/9/9/9/9/4c4/9/9/9/4K4 r - - 0 1')">单炮和将</button>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="board-container">
+                <table id="chessboard"></table>
+            </div>
+            
+            <div class="controls">
+                <div class="control-panel">
+                    <h2>游戏控制</h2>
+                    <button class="btn btn-primary" onclick="userMove()" id="userMoveBtn">用户下棋</button>
+                    <button class="btn btn-secondary" onclick="aiReplaceUser()" id="aiReplaceBtn">AI 代下</button>
+                    <button class="btn btn-success" onclick="resetGame()">重新开始</button>
+                </div>
+                
+                <div class="status">
+                    <h3>游戏状态</h3>
+                    <p id="turnStatus">当前回合：<span class="highlight">用户</span></p>
+                    <p id="gameResult"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="xiangqi.js"></script>
+    <script>
+        // 棋子符号映射
+        const pieceSymbols = {
+            'r': { 'k': '帅', 'a': '仕', 'b': '相', 'n': '马', 'r': '车', 'c': '炮', 'p': '兵' },
+            'b': { 'k': '将', 'a': '士', 'b': '象', 'n': '馬', 'r': '車', 'c': '砲', 'p': '卒' }
+        };
+
+        // 全局变量
+        let game = null;
+        let selectedSquare = null;
+        let validMoves = [];
+
+        // 初始化游戏
+        function initGame() {
+            // 使用默认开局
+            game = new Xiangqi();
+            console.log('Game initialized with default position');
+            
+            renderBoard();
+            updateStatus();
+        }
+        
+        // 显示残局选择器
+        function showEndgameSelector() {
+            const selector = document.getElementById('endgameSelector');
+            selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // 加载指定的残局
+        function loadEndgame(fen) {
+            console.log('Loading endgame with FEN:', fen);
+            game = new Xiangqi(fen);
+            renderBoard();
+            updateStatus();
+            // 隐藏残局选择器
+            document.getElementById('endgameSelector').style.display = 'none';
+        }
+        
+        // 测试put()方法
+        function testPutPieces() {
+            console.log('Testing put() method:');
+            
+            // 尝试放置一些棋子
+            const testPieces = [
+                { piece: { type: 'k', color: 'r' }, square: 'e9' },
+                { piece: { type: 'k', color: 'b' }, square: 'e0' },
+                { piece: { type: 'r', color: 'r' }, square: 'a9' },
+                { piece: { type: 'r', color: 'b' }, square: 'i0' }
+            ];
+            
+            for (let test of testPieces) {
+                const success = game.put(test.piece, test.square);
+                console.log(`  Put ${test.piece.type} (${test.piece.color}) at ${test.square}:`, success);
+            }
+            
+            // 再次测试获取棋子
+            console.log('After put(), testing piece retrieval again:');
+            for (let test of testPieces) {
+                const piece = game.get(test.square);
+                console.log(`  ${test.square}:`, piece);
+            }
+        }
+        
+        // 测试棋子获取功能
+        function testPieceRetrieval() {
+            console.log('Testing piece retrieval:');
+            
+            // 测试几个关键位置
+            const testPositions = [
+                { square: 'a9', expected: '车' },
+                { square: 'b9', expected: '马' },
+                { square: 'c9', expected: '相' },
+                { square: 'd9', expected: '仕' },
+                { square: 'e9', expected: '帅' },
+                { square: 'i0', expected: '車' },
+                { square: 'h0', expected: '馬' },
+                { square: 'e0', expected: '将' }
+            ];
+            
+            for (let pos of testPositions) {
+                const piece = game.get(pos.square);
+                console.log(`  ${pos.square}:`, piece);
+                if (piece) {
+                    console.log(`    Found: ${pieceSymbols[piece.color][piece.type]} (expected: ${pos.expected})`);
+                } else {
+                    console.log(`    No piece found (expected: ${pos.expected})`);
+                }
+            }
+        }
+
+        // 渲染棋盘
+        function renderBoard() {
+            const boardElement = document.getElementById('chessboard');
+            boardElement.innerHTML = '';
+
+            console.log('Rendering board with game state:', game);
+
+            // 使用与test-final.html相同的渲染逻辑
+            const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+            const numbers = ['9', '8', '7', '6', '5', '4', '3', '2', '1', '0'];
+            
+            for (let row = 0; row < 10; row++) {
+                const tr = document.createElement('tr');
+                for (let col = 0; col < 9; col++) {
+                    const td = document.createElement('td');
+                    const square = letters[col] + numbers[row];
+                    td.dataset.square = square;
+                    td.onclick = () => handleSquareClick(square);
+                    
+                    // 设置格子颜色
+                    if ((row + col) % 2 === 0) {
+                        td.className = 'light';
+                    } else {
+                        td.className = 'dark';
+                    }
+                    
+                    // 放置棋子
+                    const piece = game.get(square);
+                    console.log('Square:', square, 'Piece:', piece);
+                    if (piece) {
+                        console.log('Adding piece:', pieceSymbols[piece.color][piece.type], 'at', square);
+                        td.textContent = pieceSymbols[piece.color][piece.type];
+                    }
+                    
+                    tr.appendChild(td);
+                }
+                boardElement.appendChild(tr);
+            }
+        }
+
+        // 处理格子点击
+        function handleSquareClick(square) {
+            // 如果没有选中棋子，尝试选择一个用户的棋子
+            if (!selectedSquare) {
+                const piece = game.get(square);
+                if (piece && piece.color === 'r') { // 用户是红方
+                    selectedSquare = square;
+                    validMoves = getValidMoves(square);
+                    highlightSelected();
+                }
+            } else {
+                // 尝试移动到选中的格子
+                if (validMoves.includes(square)) {
+                    // 移动棋子
+                    game.move(selectedSquare + square);
+                    selectedSquare = null;
+                    validMoves = [];
+                    renderBoard();
+                    updateStatus();
+                    
+                    // 检查游戏是否结束
+                    if (game.game_over()) {
+                        showResult();
+                    } else {
+                        // AI 下棋
+                        setTimeout(() => aiMove(), 500);
+                    }
+                } else {
+                    // 选择新的棋子
+                    const piece = game.get(square);
+                    if (piece && piece.color === 'r') {
+                        selectedSquare = square;
+                        validMoves = getValidMoves(square);
+                        highlightSelected();
+                    } else {
+                        selectedSquare = null;
+                        validMoves = [];
+                        renderBoard();
+                    }
+                }
+            }
+        }
+
+        // 获取有效移动
+        function getValidMoves(square) {
+            const moves = game.moves();
+            const valid = [];
+            for (let move of moves) {
+                if (move.startsWith(square)) {
+                    valid.push(move.slice(square.length));
+                }
+            }
+            return valid;
+        }
+
+        // 高亮选中的棋子和有效移动
+        function highlightSelected() {
+            renderBoard();
+            const selectedElement = document.querySelector(`[data-square="${selectedSquare}"]`);
+            if (selectedElement) {
+                selectedElement.classList.add('selected');
+            }
+            for (let move of validMoves) {
+                const moveElement = document.querySelector(`[data-square="${move}"]`);
+                if (moveElement) {
+                    moveElement.classList.add('valid-move');
+                }
+            }
+        }
+
+        // AI 下棋
+        function aiMove() {
+            const moves = game.moves();
+            if (moves.length > 0) {
+                // 简单的 AI：随机选择一个移动
+                const randomMove = moves[Math.floor(Math.random() * moves.length)];
+                game.move(randomMove);
+                renderBoard();
+                updateStatus();
+                
+                // 检查游戏是否结束
+                if (game.game_over()) {
+                    showResult();
+                }
+            }
+        }
+
+        // 用户下棋（正常流程）
+        function userMove() {
+            // 用户可以通过点击棋盘来下棋
+            alert('请点击棋盘上的红方棋子来选择并移动');
+        }
+
+        // AI 替代用户下棋
+        function aiReplaceUser() {
+            if (game.turn() === 'r') { // 确保是用户回合
+                const moves = game.moves();
+                if (moves.length > 0) {
+                    // 选择一个最优移动（这里简单实现为随机选择）
+                    const randomMove = moves[Math.floor(Math.random() * moves.length)];
+                    game.move(randomMove);
+                    renderBoard();
+                    updateStatus();
+                    
+                    // 检查游戏是否结束
+                    if (game.game_over()) {
+                        showResult();
+                    } else {
+                        // AI 下棋
+                        setTimeout(() => aiMove(), 500);
+                    }
+                }
+            } else {
+                alert('现在不是用户的回合！');
+            }
+        }
+
+        // 更新状态
+        function updateStatus() {
+            const turnElement = document.getElementById('turnStatus');
+            const turn = game.turn() === 'r' ? '用户' : 'AI';
+            turnElement.innerHTML = `当前回合：<span class="highlight">${turn}</span>`;
+        }
+
+        // 显示游戏结果
+        function showResult() {
+            const resultElement = document.getElementById('gameResult');
+            const result = game.result();
+            let message = '';
+            
+            if (result === '1-0') {
+                message = '<span class="highlight">恭喜！用户获胜！</span>';
+            } else if (result === '0-1') {
+                message = '<span class="highlight">很遗憾，AI 获胜！</span>';
+            } else {
+                message = '<span class="highlight">平局！</span>';
+            }
+            
+            resultElement.innerHTML = message;
+        }
+
+        // 重新开始游戏
+        function resetGame() {
+            initGame();
+            document.getElementById('gameResult').innerHTML = '';
+        }
+
+        // 页面加载时初始化游戏
+        window.onload = initGame;
+    </script>
+</body>
+</html>

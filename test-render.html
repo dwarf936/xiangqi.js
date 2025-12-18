@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试象棋渲染</title>
+    <style>
+        td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 36px;
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <h1>测试象棋渲染</h1>
+    <table id="testboard"></table>
+    <script src="xiangqi.js"></script>
+    <script>
+        // 测试基本功能
+        console.log('Testing Xiangqi.js...');
+        
+        // 创建游戏对象
+        const game = new Xiangqi();
+        console.log('Game created:', game);
+        
+        // 测试获取棋子
+        const testSquares = ['a9', 'b9', 'c9', 'd9', 'e9', 'f9', 'g9', 'h9', 'i9'];
+        console.log('Testing squares:', testSquares);
+        
+        for (const square of testSquares) {
+            const piece = game.get(square);
+            console.log(`Piece at ${square}:`, piece);
+        }
+        
+        // 测试渲染
+        const boardElement = document.getElementById('testboard');
+        for (let row = 0; row < 10; row++) {
+            const tr = document.createElement('tr');
+            for (let col = 0; col < 9; col++) {
+                const td = document.createElement('td');
+                const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+                const numbers = ['9', '8', '7', '6', '5', '4', '3', '2', '1', '0'];
+                const square = letters[col] + numbers[row];
+                
+                const piece = game.get(square);
+                if (piece) {
+                    // 简单的棋子符号
+                    const symbols = {
+                        'r': { 'k': '帅', 'a': '仕', 'b': '相', 'n': '马', 'r': '车', 'c': '炮', 'p': '兵' },
+                        'b': { 'k': '将', 'a': '士', 'b': '象', 'n': '馬', 'r': '車', 'c': '砲', 'p': '卒' }
+                    };
+                    td.textContent = symbols[piece.color][piece.type];
+                }
+                
+                tr.appendChild(td);
+            }
+            boardElement.appendChild(tr);
+        }
+    </script>
+</body>
+</html>
