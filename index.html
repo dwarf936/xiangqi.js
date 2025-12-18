@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
         }
 
@@ -47,12 +47,20 @@
 
         .game-info {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 20px;
             margin-bottom: 30px;
             padding: 20px;
             background: #f8f9fa;
             border-radius: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .status {
@@ -64,6 +72,41 @@
         .controls {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .settings {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .setting-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .setting-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        select:hover, select:focus {
+            border-color: #667eea;
+            outline: none;
         }
 
         button {
@@ -94,6 +137,16 @@
 
         .btn-secondary:hover {
             background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
             transform: translateY(-2px);
         }
 
@@ -144,6 +197,26 @@
             border-radius: 50%;
         }
 
+        .square.recommended-move::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 165, 0, 0.7);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 140, 0, 0.9);
+        }
+
+        .piece-red {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .piece-black {
+            color: #212529;
+            font-weight: bold;
+        }
+
         .move-history {
             background: #f8f9fa;
             border-radius: 10px;
@@ -189,9 +262,14 @@
                 font-size: 1.5em;
             }
 
-            .game-info {
+            .info-row {
                 flex-direction: column;
-                gap: 20px;
+                gap: 15px;
+            }
+
+            .settings {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
     </style>
@@ -202,10 +280,34 @@
         <p class="subtitle">残局挑战 - 红方先行，有必胜解法</p>
 
         <div class="game-info">
-            <div class="status" id="status">红方回合，您先行</div>
-            <div class="controls">
-                <button class="btn-primary" onclick="aiMove()">AI 代下</button>
-                <button class="btn-secondary" onclick="resetGame()">重新开始</button>
+            <div class="info-row">
+                <div class="status" id="status">红方回合，您先行</div>
+                <div class="controls">
+                    <button class="btn-primary" onclick="aiMove()">AI 代下</button>
+                    <button class="btn-success" onclick="showRecommendedMove()">推荐走法</button>
+                    <button class="btn-secondary" onclick="resetGame()">重新开始</button>
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="settings">
+                    <div class="setting-group">
+                        <label for="aiDifficulty">AI 难度：</label>
+                        <select id="aiDifficulty" onchange="updateAIDifficulty()">
+                            <option value="easy">简单</option>
+                            <option value="hard">困难</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="endgameSelect">选择残局：</label>
+                        <select id="endgameSelect" onchange="loadSelectedEndgame()">
+                            <option value="endgame1">单车对双士</option>
+                            <option value="endgame2">马炮兵对士象全</option>
+                            <option value="endgame3">双车错杀</option>
+                            <option value="endgame4">马后炮杀</option>
+                            <option value="endgame5">炮碾丹砂</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -221,12 +323,20 @@
 
     <script src="xiangqi.js"></script>
     <script>
-        // 残局 FEN - 红方有必胜解法
-        const ENDGAME_FEN = '3k5/9/3R5/9/9/9/9/9/9/4K4 r - - 0 1';
+        // 残局库
+        const ENDGAMES = {
+            endgame1: '3k5/9/3R5/9/9/9/9/9/9/4K4 r - - 0 1',
+            endgame2: '2k5/3a4/3b4/9/4P3/4N3/9/9/9/4K4 r - - 0 1',
+            endgame3: '3k5/9/9/9/9/9/9/9/R3R4/4K4 r - - 0 1',
+            endgame4: '4k4/9/9/9/9/9/9/3N4/9/4K4 r - - 0 1',
+            endgame5: '3k5/9/3c5/9/9/9/9/9/9/4K4 r - - 0 1'
+        };
 
-        let game = new Xiangqi(ENDGAME_FEN);
+        let game = new Xiangqi(ENDGAMES.endgame1);
         let selectedSquare = null;
         let validMoves = [];
+        let aiDifficulty = 'easy';
+        let recommendedMove = null;
 
         // 初始化棋盘
         function initBoard() {
@@ -248,6 +358,7 @@
                     if (piece) {
                         const pieceSymbol = getPieceSymbol(piece);
                         squareElement.textContent = pieceSymbol;
+                        squareElement.classList.add(piece.color === 'r' ? 'piece-red' : 'piece-black');
                     }
 
                     boardElement.appendChild(squareElement);
@@ -283,6 +394,7 @@
                     makeMove(move);
                     selectedSquare = null;
                     validMoves = [];
+                    recommendedMove = null;
                     updateBoard();
 
                     // 如果游戏没有结束，AI 下棋
@@ -318,11 +430,15 @@
         function updateBoard() {
             const squares = document.querySelectorAll('.square');
             squares.forEach(sq => {
-                sq.classList.remove('selected', 'valid-move');
+                sq.classList.remove('selected', 'valid-move', 'recommended-move');
                 const square = sq.dataset.square;
                 const piece = game.get(square);
 
                 sq.textContent = piece ? getPieceSymbol(piece) : '';
+                sq.className = 'square';
+                if (piece) {
+                    sq.classList.add(piece.color === 'r' ? 'piece-red' : 'piece-black');
+                }
 
                 if (selectedSquare === square) {
                     sq.classList.add('selected');
@@ -330,6 +446,10 @@
 
                 if (validMoves.includes(selectedSquare + square)) {
                     sq.classList.add('valid-move');
+                }
+
+                if (recommendedMove && recommendedMove.to === square) {
+                    sq.classList.add('recommended-move');
                 }
             });
 
@@ -376,6 +496,117 @@
             }
         }
 
+        // 评估函数：评估当前局面的优劣
+        function evaluateBoard() {
+            // 棋子价值表
+            const pieceValues = {
+                k: 10000, // 将/帅
+                a: 100,    // 士/仕
+                b: 200,    // 象/相
+                n: 300,    // 马
+                r: 500,    // 车
+                c: 400,    // 炮
+                p: 100     // 卒/兵
+            };
+
+            let score = 0;
+            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+            const ranks = ['9', '8', '7', '6', '5', '4', '3', '2', '1', '0'];
+
+            // 遍历所有格子，计算总价值
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 9; j++) {
+                    const square = files[j] + ranks[i];
+                    const piece = game.get(square);
+                    if (piece) {
+                        let value = pieceValues[piece.type];
+                        // 给黑方和红方不同的权重
+                        if (piece.color === 'b') {
+                            score += value;
+                            // 卒/兵过河后价值提升
+                            if (piece.type === 'p' && i < 5) {
+                                score += 50;
+                            }
+                        } else {
+                            score -= value;
+                            // 兵过河后价值提升
+                            if (piece.type === 'p' && i > 4) {
+                                score -= 50;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return score;
+        }
+
+        // Minimax 算法带 alpha-beta 剪枝
+        function minimax(depth, alpha, beta, maximizingPlayer) {
+            if (depth === 0 || game.game_over()) {
+                return evaluateBoard();
+            }
+
+            const moves = game.moves();
+
+            if (maximizingPlayer) {
+                let maxEval = -Infinity;
+                for (let move of moves) {
+                    const gameCopy = JSON.parse(JSON.stringify(game));
+                    game.move(move);
+                    const evalScore = minimax(depth - 1, alpha, beta, false);
+                    game = JSON.parse(JSON.stringify(gameCopy));
+                    maxEval = Math.max(maxEval, evalScore);
+                    alpha = Math.max(alpha, evalScore);
+                    if (beta <= alpha) {
+                        break; // Alpha-beta 剪枝
+                    }
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (let move of moves) {
+                    const gameCopy = JSON.parse(JSON.stringify(game));
+                    game.move(move);
+                    const evalScore = minimax(depth - 1, alpha, beta, true);
+                    game = JSON.parse(JSON.stringify(gameCopy));
+                    minEval = Math.min(minEval, evalScore);
+                    beta = Math.min(beta, evalScore);
+                    if (beta <= alpha) {
+                        break; // Alpha-beta 剪枝
+                    }
+                }
+                return minEval;
+            }
+        }
+
+        // 优化后的 Minimax 算法实现
+        function findBestMove(depth) {
+            const moves = game.moves();
+            let bestMove = moves[0];
+            let bestScore = -Infinity;
+
+            for (let move of moves) {
+                // 保存当前游戏状态
+                const fen = game.fen();
+                game.move(move);
+                
+                // 计算这个走法的评分
+                const score = minimax(depth - 1, -Infinity, Infinity, false);
+                
+                // 恢复游戏状态
+                game.load(fen);
+                
+                // 更新最佳走法
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
+        }
+
         // AI 走棋
         function aiMove() {
             // 如果游戏结束或不是当前回合，不允许 AI 走棋
@@ -383,19 +614,56 @@
 
             const moves = game.moves();
             if (moves.length > 0) {
-                // 简单的 AI：选择第一个可用的走法
-                // 对于残局，这个简单的 AI 足够让用户练习必胜解法
-                const move = moves[0];
+                let move;
+                if (aiDifficulty === 'easy') {
+                    // 简单 AI：随机选择一个走法
+                    move = moves[Math.floor(Math.random() * moves.length)];
+                } else {
+                    // 困难 AI：使用 minimax 算法带 alpha-beta 剪枝，搜索深度为 3
+                    move = findBestMove(3);
+                }
                 makeMove(move);
                 updateBoard();
             }
         }
 
-        // 重新开始游戏
-        function resetGame() {
-            game = new Xiangqi(ENDGAME_FEN);
+        // 显示推荐走法
+        function showRecommendedMove() {
+            if (game.game_over() || game.turn() !== 'r') return;
+
+            const moves = game.moves({ verbose: true });
+            if (moves.length > 0) {
+                // 简单的推荐算法：选择第一个可用的走法
+                // 可以进一步优化为更智能的推荐
+                recommendedMove = moves[0];
+                updateBoard();
+            }
+        }
+
+        // 更新 AI 难度
+        function updateAIDifficulty() {
+            aiDifficulty = document.getElementById('aiDifficulty').value;
+        }
+
+        // 加载选中的残局
+        function loadSelectedEndgame() {
+            const selectedEndgame = document.getElementById('endgameSelect').value;
+            game = new Xiangqi(ENDGAMES[selectedEndgame]);
             selectedSquare = null;
             validMoves = [];
+            recommendedMove = null;
+            initBoard();
+            updateStatus();
+            updateMoveHistory();
+        }
+
+        // 重新开始游戏
+        function resetGame() {
+            const selectedEndgame = document.getElementById('endgameSelect').value;
+            game = new Xiangqi(ENDGAMES[selectedEndgame]);
+            selectedSquare = null;
+            validMoves = [];
+            recommendedMove = null;
             initBoard();
             updateStatus();
             updateMoveHistory();
