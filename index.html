@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国象棋人机对战 - 残局挑战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .status {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(9, 50px);
+            grid-template-rows: repeat(10, 50px);
+            gap: 0;
+            border: 3px solid #333;
+            background: #deb887;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .square {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #8b7355;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .square:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .square.selected {
+            background: rgba(255, 215, 0, 0.5);
+            border: 2px solid #ffd700;
+        }
+
+        .square.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: rgba(0, 255, 0, 0.6);
+            border-radius: 50%;
+        }
+
+        .move-history {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .move-history h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .move-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+        }
+
+        .move-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .board {
+                grid-template-columns: repeat(9, 40px);
+                grid-template-rows: repeat(10, 40px);
+            }
+
+            .square {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5em;
+            }
+
+            .game-info {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>中国象棋人机对战</h1>
+        <p class="subtitle">残局挑战 - 红方先行，有必胜解法</p>
+
+        <div class="game-info">
+            <div class="status" id="status">红方回合，您先行</div>
+            <div class="controls">
+                <button class="btn-primary" onclick="aiMove()">AI 代下</button>
+                <button class="btn-secondary" onclick="resetGame()">重新开始</button>
+            </div>
+        </div>
+
+        <div class="board-container">
+            <div class="board" id="board"></div>
+        </div>
+
+        <div class="move-history">
+            <h3>走法记录</h3>
+            <div class="move-list" id="moveList"></div>
+        </div>
+    </div>
+
+    <script src="xiangqi.js"></script>
+    <script>
+        // 残局 FEN - 红方有必胜解法
+        const ENDGAME_FEN = '3k5/9/3R5/9/9/9/9/9/9/4K4 r - - 0 1';
+
+        let game = new Xiangqi(ENDGAME_FEN);
+        let selectedSquare = null;
+        let validMoves = [];
+
+        // 初始化棋盘
+        function initBoard() {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+
+            const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+            const ranks = ['9', '8', '7', '6', '5', '4', '3', '2', '1', '0'];
+
+            for (let i = 0; i < 10; i++) {
+                for (let j = 0; j < 9; j++) {
+                    const square = files[j] + ranks[i];
+                    const piece = game.get(square);
+                    const squareElement = document.createElement('div');
+                    squareElement.className = 'square';
+                    squareElement.dataset.square = square;
+                    squareElement.onclick = () => handleSquareClick(square);
+
+                    if (piece) {
+                        const pieceSymbol = getPieceSymbol(piece);
+                        squareElement.textContent = pieceSymbol;
+                    }
+
+                    boardElement.appendChild(squareElement);
+                }
+            }
+        }
+
+        // 获取棋子符号
+        function getPieceSymbol(piece) {
+            const symbols = {
+                r: {
+                    k: '帅', a: '仕', b: '相', n: '马', r: '车', c: '炮', p: '兵'
+                },
+                b: {
+                    k: '将', a: '士', b: '象', n: '馬', r: '車', c: '砲', p: '卒'
+                }
+            };
+            return symbols[piece.color][piece.type];
+        }
+
+        // 处理棋盘格子点击
+        function handleSquareClick(square) {
+            // 如果不是红方回合，不允许操作
+            if (game.turn() !== 'r') return;
+
+            const piece = game.get(square);
+
+            // 如果有选中的格子
+            if (selectedSquare) {
+                // 尝试移动
+                const move = selectedSquare + square;
+                if (validMoves.includes(move)) {
+                    makeMove(move);
+                    selectedSquare = null;
+                    validMoves = [];
+                    updateBoard();
+
+                    // 如果游戏没有结束，AI 下棋
+                    if (!game.game_over()) {
+                        setTimeout(() => aiMove(), 500);
+                    }
+                } else if (piece && piece.color === 'r') {
+                    // 选择新的红方棋子
+                    selectedSquare = square;
+                    validMoves = getValidMoves(square);
+                    updateBoard();
+                } else {
+                    // 取消选择
+                    selectedSquare = null;
+                    validMoves = [];
+                    updateBoard();
+                }
+            } else if (piece && piece.color === 'r') {
+                // 选择红方棋子
+                selectedSquare = square;
+                validMoves = getValidMoves(square);
+                updateBoard();
+            }
+        }
+
+        // 获取有效走法
+        function getValidMoves(square) {
+            const moves = game.moves({ verbose: true });
+            return moves.filter(move => move.from === square).map(move => move.from + move.to);
+        }
+
+        // 更新棋盘显示
+        function updateBoard() {
+            const squares = document.querySelectorAll('.square');
+            squares.forEach(sq => {
+                sq.classList.remove('selected', 'valid-move');
+                const square = sq.dataset.square;
+                const piece = game.get(square);
+
+                sq.textContent = piece ? getPieceSymbol(piece) : '';
+
+                if (selectedSquare === square) {
+                    sq.classList.add('selected');
+                }
+
+                if (validMoves.includes(selectedSquare + square)) {
+                    sq.classList.add('valid-move');
+                }
+            });
+
+            updateStatus();
+            updateMoveHistory();
+        }
+
+        // 更新状态显示
+        function updateStatus() {
+            const statusElement = document.getElementById('status');
+            if (game.game_over()) {
+                if (game.in_checkmate()) {
+                    const winner = game.turn() === 'r' ? '黑方' : '红方';
+                    statusElement.textContent = `游戏结束 - ${winner}获胜！`;
+                } else {
+                    statusElement.textContent = '游戏结束 - 和棋！';
+                }
+            } else {
+                const turn = game.turn() === 'r' ? '红方' : '黑方';
+                statusElement.textContent = `${turn}回合`;
+            }
+        }
+
+        // 更新走法记录
+        function updateMoveHistory() {
+            const moveListElement = document.getElementById('moveList');
+            const history = game.history();
+            moveListElement.innerHTML = '';
+
+            for (let i = 0; i < history.length; i++) {
+                const moveItem = document.createElement('div');
+                moveItem.className = 'move-item';
+                moveItem.textContent = `${Math.floor(i / 2) + 1}. ${history[i]}`;
+                moveListElement.appendChild(moveItem);
+            }
+        }
+
+        // 走棋
+        function makeMove(move) {
+            try {
+                game.move(move);
+            } catch (e) {
+                console.error('无效走法:', e);
+            }
+        }
+
+        // AI 走棋
+        function aiMove() {
+            // 如果游戏结束或不是当前回合，不允许 AI 走棋
+            if (game.game_over()) return;
+
+            const moves = game.moves();
+            if (moves.length > 0) {
+                // 简单的 AI：选择第一个可用的走法
+                // 对于残局，这个简单的 AI 足够让用户练习必胜解法
+                const move = moves[0];
+                makeMove(move);
+                updateBoard();
+            }
+        }
+
+        // 重新开始游戏
+        function resetGame() {
+            game = new Xiangqi(ENDGAME_FEN);
+            selectedSquare = null;
+            validMoves = [];
+            initBoard();
+            updateStatus();
+            updateMoveHistory();
+        }
+
+        // 初始化游戏
+        initBoard();
+    </script>
+</body>
+</html>
